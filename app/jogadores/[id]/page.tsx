@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { Sidebar } from "@/components/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,14 +44,27 @@ import {
   YAxis,
   Tooltip,
 } from "recharts";
+import { Player } from "@/types/jogador";
+import { createClientBrowser } from "@/lib/supabase/client";
 
 export default function PlayerDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const [jogador, setJogador] = useState<Player[] | null>(null);
+  useEffect(() => {
+    async function fetchData() {
+      const supabase = await createClientBrowser();
+      const { data: jogador } = await supabase.from("jogador").select();
+      console.log(" esta aqui o jogador ", jogador);
+
+      setJogador(jogador);
+    }
+    fetchData();
+  }, []);
   const { id } = use(params);
-  const player = players.find((p) => p.id === parseInt(id));
+  const player = jogador?.find((p) => p.id === parseInt(id));
 
   if (!player) {
     return (
@@ -71,12 +84,6 @@ export default function PlayerDetailPage({
     );
   }
 
-  const healthStatusColor = {
-    Saudável: "bg-green-500/20 text-green-500 border-green-500/30",
-    Lesionado: "bg-red-500/20 text-red-500 border-red-500/30",
-    "Em observação": "bg-yellow-500/20 text-yellow-500 border-yellow-500/30",
-  };
-
   const priorityColor = {
     Alta: "bg-red-500/20 text-red-500",
     Média: "bg-yellow-500/20 text-yellow-500",
@@ -89,40 +96,39 @@ export default function PlayerDetailPage({
     Atrasado: "bg-red-500/20 text-red-500",
   };
 
-  const kmData = player.training.kmPerSession.map((km, i) => ({
-    treino: `T${i + 1}`,
-    km,
-  }));
+  // const kmData = player.training.kmPerSession.map((km, i) => ({
+  //   treino: `T${i + 1}`,
+  //   km,
+  // }));
 
-  const statsRadialData = [
-    {
-      name: "PTS",
-      value: (player.stats.points / 30) * 100,
-      fill: "hsl(var(--primary))",
-    },
-    {
-      name: "AST",
-      value: (player.stats.assists / 10) * 100,
-      fill: "hsl(var(--chart-2))",
-    },
-    {
-      name: "REB",
-      value: (player.stats.rebounds / 15) * 100,
-      fill: "hsl(var(--chart-3))",
-    },
-  ];
+  // const statsRadialData = [
+  //   {
+  //     name: "PTS",
+  //     value: (player.stats.points / 30) * 100,
+  //     fill: "hsl(var(--primary))",
+  //   },
+  //   {
+  //     name: "AST",
+  //     value: (player.stats.assists / 10) * 100,
+  //     fill: "hsl(var(--chart-2))",
+  //   },
+  //   {
+  //     name: "REB",
+  //     value: (player.stats.rebounds / 15) * 100,
+  //     fill: "hsl(var(--chart-3))",
+  //   },
+  // ];
 
   const shootingData = [
-    { name: "Lance Livre", value: player.stats.freeThrow },
-    { name: "3 Pontos", value: player.stats.threePoint },
-    { name: "Field Goal", value: player.stats.fieldGoal },
+    { name: "bandeja", value: player.bandeja },
+    { name: "arremesso", value: player.arremesso },
   ];
 
-  const attendanceChartData = player.attendanceHistory.map((item) => ({
-    month: item.month,
-    presente: item.present,
-    ausente: item.absent,
-  }));
+  // const attendanceChartData = player.attendanceHistory.map((item) => ({
+  //   month: item.month,
+  //   presente: item.present,
+  //   ausente: item.absent,
+  // }));
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -161,13 +167,13 @@ export default function PlayerDetailPage({
                         {player.name}
                       </h2>
                       <span className="text-xl text-primary font-bold">
-                        #{player.number}
+                        #{player.nivel} nivel
                       </span>
                     </div>
                     <p className="text-muted-foreground mb-2">
-                      {player.position}
+                      {player.posicao}
                     </p>
-                    <Badge
+                    {/* <Badge
                       className={cn(
                         "border",
                         healthStatusColor[
@@ -176,38 +182,40 @@ export default function PlayerDetailPage({
                       )}
                     >
                       {player.health.status}
-                    </Badge>
+                    </Badge> */}
                   </div>
                 </div>
                 <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-secondary rounded-lg p-3 text-center">
                     <p className="text-2xl font-bold text-primary">
-                      {player.age}
+                      {player.nascimento}
                     </p>
-                    <p className="text-xs text-muted-foreground">Anos</p>
+                    <p className="text-xs text-muted-foreground">
+                      ano de nascimento
+                    </p>
                   </div>
                   <div className="bg-secondary rounded-lg p-3 text-center">
                     <p className="text-2xl font-bold text-foreground">
-                      {player.height}
+                      {player.altura}
                     </p>
                     <p className="text-xs text-muted-foreground">Altura</p>
                   </div>
                   <div className="bg-secondary rounded-lg p-3 text-center">
                     <p className="text-2xl font-bold text-foreground">
-                      {player.weight}kg
+                      {player.arremesso}
                     </p>
-                    <p className="text-xs text-muted-foreground">Peso</p>
+                    <p className="text-xs text-muted-foreground">arremesso</p>
                   </div>
                   <div className="bg-secondary rounded-lg p-3 text-center">
                     <p className="text-2xl font-bold text-foreground">
-                      {player.gamesPlayed}
+                      {player.qi_jogo}
                     </p>
-                    <p className="text-xs text-muted-foreground">Jogos</p>
+                    <p className="text-xs text-muted-foreground">qi de jogo</p>
                   </div>
                 </div>
               </div>
               <p className="mt-4 text-muted-foreground leading-relaxed">
-                {player.description}
+                {player.name}
               </p>
             </CardContent>
           </Card>
@@ -266,31 +274,31 @@ export default function PlayerDetailPage({
                     <div className="grid grid-cols-5 gap-2">
                       <div className="bg-secondary rounded-lg p-3 text-center">
                         <p className="text-2xl font-bold text-primary">
-                          {player.stats.points}
+                          {player.ataque}
                         </p>
                         <p className="text-xs text-muted-foreground">PTS</p>
                       </div>
                       <div className="bg-secondary rounded-lg p-3 text-center">
                         <p className="text-2xl font-bold text-foreground">
-                          {player.stats.assists}
+                          {player.assistencia}
                         </p>
                         <p className="text-xs text-muted-foreground">AST</p>
                       </div>
                       <div className="bg-secondary rounded-lg p-3 text-center">
                         <p className="text-2xl font-bold text-foreground">
-                          {player.stats.rebounds}
+                          {player.rebote}
                         </p>
                         <p className="text-xs text-muted-foreground">REB</p>
                       </div>
                       <div className="bg-secondary rounded-lg p-3 text-center">
                         <p className="text-2xl font-bold text-foreground">
-                          {player.stats.steals}
+                          {player.defesa}
                         </p>
                         <p className="text-xs text-muted-foreground">STL</p>
                       </div>
                       <div className="bg-secondary rounded-lg p-3 text-center">
                         <p className="text-2xl font-bold text-foreground">
-                          {player.stats.blocks}
+                          {player.defesa}
                         </p>
                         <p className="text-xs text-muted-foreground">BLK</p>
                       </div>
@@ -317,7 +325,10 @@ export default function PlayerDetailPage({
                               {item.value}%
                             </span>
                           </div>
-                          <Progress value={item.value} className="h-2" />
+                          <Progress
+                            value={Number(item.value)}
+                            className="h-2"
+                          />
                         </div>
                       ))}
                     </div>
@@ -334,7 +345,7 @@ export default function PlayerDetailPage({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {player.errors.map((error, index) => (
                       <div key={index} className="bg-secondary rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
@@ -348,7 +359,7 @@ export default function PlayerDetailPage({
                         </p>
                       </div>
                     ))}
-                  </div>
+                  </div> */}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -362,9 +373,9 @@ export default function PlayerDetailPage({
                       <Footprints className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-primary">
+                      {/* <p className="text-2xl font-bold text-primary">
                         {player.training.avgKm} km
-                      </p>
+                      </p> */}
                       <p className="text-sm text-muted-foreground">
                         Média por Treino
                       </p>
@@ -377,9 +388,9 @@ export default function PlayerDetailPage({
                       <Timer className="h-6 w-6 text-green-500" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-foreground">
+                      {/* <p className="text-2xl font-bold text-foreground">
                         {player.training.sessionsThisMonth}
-                      </p>
+                      </p> */}
                       <p className="text-sm text-muted-foreground">
                         Treinos este Mês
                       </p>
@@ -392,9 +403,9 @@ export default function PlayerDetailPage({
                       <Activity className="h-6 w-6 text-blue-500" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-foreground">
+                      {/* <p className="text-2xl font-bold text-foreground">
                         {player.training.totalSessions}
-                      </p>
+                      </p> */}
                       <p className="text-sm text-muted-foreground">
                         Total de Treinos
                       </p>
@@ -412,7 +423,7 @@ export default function PlayerDetailPage({
                 </CardHeader>
                 <CardContent>
                   <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                    {/* <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={kmData}>
                         <defs>
                           <linearGradient
@@ -459,7 +470,7 @@ export default function PlayerDetailPage({
                           fill="url(#kmGradient)"
                         />
                       </AreaChart>
-                    </ResponsiveContainer>
+                    </ResponsiveContainer> */}
                   </div>
                 </CardContent>
               </Card>
@@ -484,7 +495,7 @@ export default function PlayerDetailPage({
                             outerRadius="100%"
                             data={[
                               {
-                                value: player.attendance,
+                                // value: player.attendance,
                                 fill: "hsl(var(--primary))",
                               },
                             ]}
@@ -500,9 +511,9 @@ export default function PlayerDetailPage({
                         </ResponsiveContainer>
                       </div>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-3xl font-bold text-primary">
+                        {/* <span className="text-3xl font-bold text-primary">
                           {player.attendance}%
-                        </span>
+                        </span> */}
                       </div>
                     </div>
                   </CardContent>
@@ -517,7 +528,7 @@ export default function PlayerDetailPage({
                   </CardHeader>
                   <CardContent>
                     <div className="h-[200px]">
-                      <ResponsiveContainer width="100%" height="100%">
+                      {/* <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={attendanceChartData}>
                           <CartesianGrid
                             strokeDasharray="3 3"
@@ -546,7 +557,7 @@ export default function PlayerDetailPage({
                             radius={[4, 4, 0, 0]}
                           />
                         </BarChart>
-                      </ResponsiveContainer>
+                      </ResponsiveContainer> */}
                     </div>
                   </CardContent>
                 </Card>
@@ -562,9 +573,9 @@ export default function PlayerDetailPage({
                       <DollarSign className="h-6 w-6 text-green-500" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-green-500">
+                      {/* <p className="text-2xl font-bold text-green-500">
                         R$ {player.financial.totalPaid.toLocaleString("pt-BR")}
-                      </p>
+                      </p> */}
                       <p className="text-sm text-muted-foreground">
                         Total Pago
                       </p>
@@ -577,10 +588,10 @@ export default function PlayerDetailPage({
                       <Clock className="h-6 w-6 text-red-500" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-red-500">
+                      {/* <p className="text-2xl font-bold text-red-500">
                         R${" "}
                         {player.financial.pendingAmount.toLocaleString("pt-BR")}
-                      </p>
+                      </p> */}
                       <p className="text-sm text-muted-foreground">Pendente</p>
                     </div>
                   </CardContent>
@@ -595,7 +606,7 @@ export default function PlayerDetailPage({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  {/* <div className="space-y-3">
                     {player.financial.paymentHistory.map((payment, index) => (
                       <div
                         key={index}
@@ -636,7 +647,7 @@ export default function PlayerDetailPage({
                         </div>
                       </div>
                     ))}
-                  </div>
+                  </div> */}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -650,9 +661,9 @@ export default function PlayerDetailPage({
                       <Heart className="h-6 w-6 text-red-500" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-foreground">
+                      {/* <p className="text-2xl font-bold text-foreground">
                         {player.health.heartRate} bpm
-                      </p>
+                      </p> */}
                       <p className="text-sm text-muted-foreground">
                         Freq. Cardíaca
                       </p>
@@ -665,9 +676,9 @@ export default function PlayerDetailPage({
                       <Activity className="h-6 w-6 text-blue-500" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-foreground">
+                      {/* <p className="text-2xl font-bold text-foreground">
                         {player.health.weight} kg
-                      </p>
+                      </p> */}
                       <p className="text-sm text-muted-foreground">
                         Peso Atual
                       </p>
@@ -680,9 +691,9 @@ export default function PlayerDetailPage({
                       <TrendingUp className="h-6 w-6 text-yellow-500" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-foreground">
+                      {/* <p className="text-2xl font-bold text-foreground">
                         {player.health.bodyFat}%
-                      </p>
+                      </p> */}
                       <p className="text-sm text-muted-foreground">
                         Gordura Corporal
                       </p>
@@ -702,7 +713,7 @@ export default function PlayerDetailPage({
                   <div className="bg-secondary rounded-lg p-4">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <Badge
+                        {/* <Badge
                           className={cn(
                             "border",
                             healthStatusColor[
@@ -712,15 +723,15 @@ export default function PlayerDetailPage({
                           )}
                         >
                           {player.health.status}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
+                        </Badge> */}
+                        {/* <span className="text-sm text-muted-foreground">
                           Último check-up: {player.health.lastCheckup}
-                        </span>
+                        </span> */}
                       </div>
                     </div>
-                    <p className="text-muted-foreground">
+                    {/* <p className="text-muted-foreground">
                       {player.health.notes}
-                    </p>
+                    </p> */}
                   </div>
                 </CardContent>
               </Card>
@@ -738,7 +749,7 @@ export default function PlayerDetailPage({
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
+                    {/* <div className="space-y-3">
                       {player.advice.map((tip, index) => (
                         <div
                           key={index}
@@ -752,7 +763,7 @@ export default function PlayerDetailPage({
                           <p className="text-sm text-muted-foreground">{tip}</p>
                         </div>
                       ))}
-                    </div>
+                    </div> */}
                   </CardContent>
                 </Card>
 
@@ -765,7 +776,7 @@ export default function PlayerDetailPage({
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
+                    {/* <div className="space-y-3">
                       {player.notes.map((note, index) => (
                         <div
                           key={index}
@@ -788,7 +799,7 @@ export default function PlayerDetailPage({
                           <p className="text-sm text-foreground">{note.text}</p>
                         </div>
                       ))}
-                    </div>
+                    </div> */}
                   </CardContent>
                 </Card>
               </div>

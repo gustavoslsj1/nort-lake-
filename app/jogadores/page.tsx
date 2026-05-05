@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -21,7 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { players } from "@/lib/data";
+
 import { Search, Activity, Heart, Calendar, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -34,26 +34,46 @@ import {
   Legend,
 } from "recharts";
 import Link from "next/link";
+import { createClientBrowser } from "@/lib/supabase/client";
+import { Player } from "@/types/jogador";
 
 export default function JogadoresPage() {
   const [search, setSearch] = useState("");
   const [positionFilter, setPositionFilter] = useState("all");
   const [healthFilter, setHealthFilter] = useState("all");
   const [selectedPlayers, setSelectedPlayers] = useState<number[]>([]);
+  const [jogador, setJogador] = useState<Player[] | null>(null);
+  useEffect(() => {
+    async function fetchData() {
+      const supabase = await createClientBrowser();
+      const { data: jogador } = await supabase.from("jogador").select();
+      console.log(" esta aqui o jogador ", jogador);
 
-  const filteredPlayers = players.filter((player) => {
-    const matchesSearch = player.name
-      .toLowerCase()
-      .includes(search.toLowerCase());
+      setJogador(jogador);
+    }
+    fetchData();
+  }, []);
+  if (!jogador) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <p>Anime não encontrado.</p>
+      </div>
+    );
+  }
+
+  const filteredPlayers = jogador.filter((player) => {
+    const matchesSearch = search
+      ? (player.name || "").toLowerCase().includes(search.toLowerCase())
+      : true;
     const matchesPosition =
-      positionFilter === "all" || player.position === positionFilter;
-    const matchesHealth =
-      healthFilter === "all" || player.health.status === healthFilter;
+      positionFilter === "all" || player.posicao === positionFilter;
+    const matchesHealth = healthFilter === "null";
+    // || player.health.status === healthFilter;
     return matchesSearch && matchesPosition && matchesHealth;
   });
 
-  const positions = [...new Set(players.map((p) => p.position))];
-  const healthStatuses = [...new Set(players.map((p) => p.health.status))];
+  const positions = [...new Set(jogador.map((p) => p.posicao))];
+  // const healthStatuses = [...new Set(jogador.map((p) => p.health.status))];
 
   const togglePlayerSelection = (playerId: number) => {
     if (selectedPlayers.includes(playerId)) {
@@ -63,51 +83,45 @@ export default function JogadoresPage() {
     }
   };
 
-  const getComparisonData = () => {
-    if (selectedPlayers.length !== 2) return [];
-    const player1 = players.find((p) => p.id === selectedPlayers[0]);
-    const player2 = players.find((p) => p.id === selectedPlayers[1]);
-    if (!player1 || !player2) return [];
+  // const getComparisonData = () => {
+  //   if (selectedPlayers.length !== 2) return [];
+  //   const player1 = jogador.find((p) => p.id === selectedPlayers[0]);
+  //   const player2 = jogador.find((p) => p.id === selectedPlayers[1]);
+  //   if (!player1 || !player2) return [];
 
-    return [
-      {
-        stat: "Pontos",
-        [player1.name]: player1.stats.points,
-        [player2.name]: player2.stats.points,
-        fullMark: 30,
-      },
-      {
-        stat: "Assistências",
-        [player1.name]: player1.stats.assists,
-        [player2.name]: player2.stats.assists,
-        fullMark: 15,
-      },
-      {
-        stat: "Rebotes",
-        [player1.name]: player1.stats.rebounds,
-        [player2.name]: player2.stats.rebounds,
-        fullMark: 15,
-      },
-      {
-        stat: "Roubos",
-        [player1.name]: player1.stats.steals,
-        [player2.name]: player2.stats.steals,
-        fullMark: 5,
-      },
-      {
-        stat: "Tocos",
-        [player1.name]: player1.stats.blocks,
-        [player2.name]: player2.stats.blocks,
-        fullMark: 5,
-      },
-    ];
-  };
-
-  const healthStatusColor = {
-    Saudável: "bg-green-500/20 text-green-500 border-green-500/30",
-    Lesionado: "bg-red-500/20 text-red-500 border-red-500/30",
-    "Em observação": "bg-yellow-500/20 text-yellow-500 border-yellow-500/30",
-  };
+  //   return [
+  //     {
+  //       stat: "Pontos",
+  //       [player1.name]: player1.stats.points,
+  //       [player2.name]: player2.stats.points,
+  //       fullMark: 30,
+  //     },
+  //     {
+  //       stat: "Assistências",
+  //       [player1.name]: player1.stats.assists,
+  //       [player2.name]: player2.stats.assists,
+  //       fullMark: 15,
+  //     },
+  //     {
+  //       stat: "Rebotes",
+  //       [player1.name]: player1.stats.rebounds,
+  //       [player2.name]: player2.stats.rebounds,
+  //       fullMark: 15,
+  //     },
+  //     {
+  //       stat: "Roubos",
+  //       [player1.name]: player1.stats.steals,
+  //       [player2.name]: player2.stats.steals,
+  //       fullMark: 5,
+  //     },
+  //     {
+  //       stat: "Tocos",
+  //       [player1.name]: player1.stats.blocks,
+  //       [player2.name]: player2.stats.blocks,
+  //       fullMark: 5,
+  //     },
+  //   ];
+  // };
 
   return (
     <div className="min-h-screen bg-background">
@@ -136,7 +150,7 @@ export default function JogadoresPage() {
                     </DialogTitle>
                   </DialogHeader>
                   <div className="h-[400px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                    {/* <ResponsiveContainer width="100%" height="100%">
                       <RadarChart data={getComparisonData()}>
                         <PolarGrid stroke="hsl(var(--border))" />
                         <PolarAngleAxis
@@ -149,18 +163,21 @@ export default function JogadoresPage() {
                         <PolarRadiusAxis
                           tick={{ fill: "hsl(var(--muted-foreground))" }}
                         />
-                        {selectedPlayers.map((playerId, index) => {
-                          const player = players.find((p) => p.id === playerId);
+                        {jogador?.map((item) => {
                           return (
                             <Radar
-                              key={playerId}
-                              name={player?.name}
-                              dataKey={player?.name || ""}
+                              key={item.id}
+                              name={item.name || ""}
+                              dataKey={item.name || ""}
                               stroke={
-                                index === 0 ? "hsl(var(--primary))" : "#22c55e"
+                                item.id === 0
+                                  ? "hsl(var(--primary))"
+                                  : "#22c55e"
                               }
                               fill={
-                                index === 0 ? "hsl(var(--primary))" : "#22c55e"
+                                item.id === 0
+                                  ? "hsl(var(--primary))"
+                                  : "#22c55e"
                               }
                               fillOpacity={0.3}
                             />
@@ -168,7 +185,7 @@ export default function JogadoresPage() {
                         })}
                         <Legend />
                       </RadarChart>
-                    </ResponsiveContainer>
+                    </ResponsiveContainer> */}
                   </div>
                 </DialogContent>
               </Dialog>
@@ -210,11 +227,11 @@ export default function JogadoresPage() {
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
                     <SelectItem value="all">Todos Status</SelectItem>
-                    {healthStatuses.map((status) => (
+                    {/* {healthStatuses.map((status) => (
                       <SelectItem key={status} value={status}>
                         {status}
                       </SelectItem>
-                    ))}
+                    ))} */}
                   </SelectContent>
                 </Select>
               </div>
@@ -223,8 +240,8 @@ export default function JogadoresPage() {
                   <span className="text-sm text-muted-foreground">
                     Selecionados para comparação:
                   </span>
-                  {selectedPlayers.map((id) => {
-                    const player = players.find((p) => p.id === id);
+                  {/* {selectedPlayers.map((id) => {
+                    const player = player.find((p) => p.id === id);
                     return (
                       <Badge
                         key={id}
@@ -234,7 +251,7 @@ export default function JogadoresPage() {
                         {player?.name}
                       </Badge>
                     );
-                  })}
+                  })} */}
                   <Button
                     variant="ghost"
                     size="sm"
@@ -249,8 +266,8 @@ export default function JogadoresPage() {
           </Card>
 
           {/* Players Grid */}
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {filteredPlayers.map((player) => (
+          <div className="grid gap-6">
+            {jogador.map((player) => (
               <Card
                 key={player.id}
                 className={cn(
@@ -274,7 +291,7 @@ export default function JogadoresPage() {
                           {player.name}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">
-                          {player.position} | #{player.number}
+                          {player.posicao} | #{player.id}
                         </p>
                       </div>
                     </div>
@@ -282,13 +299,13 @@ export default function JogadoresPage() {
                       <Badge
                         className={cn(
                           "border",
-                          healthStatusColor[
-                            player.health
-                              .status as keyof typeof healthStatusColor
-                          ],
+                          // healthStatusColor[
+                          //   player.health
+                          //     .status as keyof typeof healthStatusColor
+                          // ],
                         )}
                       >
-                        {player.health.status}
+                        {/* {player.health.status} */}
                       </Badge>
                       <Link href={`/jogadores/${player.id}`}>
                         <Button
@@ -302,76 +319,6 @@ export default function JogadoresPage() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Stats */}
-                  <div className="grid grid-cols-5 gap-2 rounded-lg bg-secondary p-3">
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-primary">
-                        {player.stats.points}
-                      </p>
-                      <p className="text-xs text-muted-foreground">PTS</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-foreground">
-                        {player.stats.assists}
-                      </p>
-                      <p className="text-xs text-muted-foreground">AST</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-foreground">
-                        {player.stats.rebounds}
-                      </p>
-                      <p className="text-xs text-muted-foreground">REB</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-foreground">
-                        {player.stats.steals}
-                      </p>
-                      <p className="text-xs text-muted-foreground">STL</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-foreground">
-                        {player.stats.blocks}
-                      </p>
-                      <p className="text-xs text-muted-foreground">BLK</p>
-                    </div>
-                  </div>
-
-                  {/* Additional Info */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Activity className="h-4 w-4 text-primary" />
-                      <span className="text-muted-foreground">Presença:</span>
-                      <span className="font-medium text-foreground">
-                        {player.attendance}%
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Trophy className="h-4 w-4 text-primary" />
-                      <span className="text-muted-foreground">Jogos:</span>
-                      <span className="font-medium text-foreground">
-                        {player.gamesPlayed}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Heart className="h-4 w-4 text-primary" />
-                      <span className="text-muted-foreground">
-                        Último checkup:
-                      </span>
-                      <span className="font-medium text-foreground">
-                        {new Date(player.health.lastCheckup).toLocaleDateString(
-                          "pt-BR",
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-primary" />
-                      <span className="text-muted-foreground truncate">
-                        {player.health.notes}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
               </Card>
             ))}
           </div>
