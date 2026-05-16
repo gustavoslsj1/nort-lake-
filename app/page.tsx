@@ -35,6 +35,9 @@ import {
   Sector,
 } from "recharts";
 import { MyCustomPie, renderCustomizedLabel } from "@/lib/recharts";
+import { useEffect, useState } from "react";
+import { createClientBrowser } from "@/lib/supabase/client";
+import { Player } from "@/types/jogador";
 // import { RechartsDevtools } from "@recharts/devtools";
 export default function Dashboard({
   isAnimationActive = true,
@@ -62,6 +65,17 @@ export default function Dashboard({
     { id: 2, nome: "gabriel", value: 20 },
     { id: 3, nome: "gugu", value: 30 },
   ];
+  const [jogador, setJogador] = useState<Player[] | null>(null);
+  useEffect(() => {
+    async function fetchData() {
+      const supabase = await createClientBrowser();
+      const { data: jogador } = await supabase.from("jogador").select();
+      console.log(" esta aqui o jogador ", jogador);
+
+      setJogador(jogador);
+    }
+    fetchData();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -305,9 +319,7 @@ export default function Dashboard({
 
             <Card className="border-border bg-card">
               <CardHeader>
-                <CardTitle className="text-foreground">
-                  Resultados Recentes
-                </CardTitle>
+                <CardTitle className="text-foreground">financeiro</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <PieChart
@@ -334,18 +346,52 @@ export default function Dashboard({
             <Card className="border-border bg-card">
               <CardHeader>
                 <CardTitle className="text-foreground">
-                  Resultados Recentes
+                  Contribuidores
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4"></CardContent>
-            </Card>
-            <Card className="border-border bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground">
-                  Resultados Recentes
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4"></CardContent>
+              <CardContent className="space-y-4">
+                {jogador?.map((jogador, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between rounded-lg bg-secondary p-4"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                          jogador.name === "V"
+                            ? "bg-green-500/20 text-green-500"
+                            : "bg-red-500/20 text-red-500"
+                        }`}
+                      >
+                        {jogador.name === "V" ? (
+                          <TrendingUp className="h-5 w-5" />
+                        ) : (
+                          <TrendingDown className="h-5 w-5" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {" "}
+                          {jogador.name}
+                        </p>
+                        <p className="text-sm text-muted-foreground"></p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-foreground"></p>
+                      <p
+                        className={`text-sm font-medium ${
+                          jogador.name === "V"
+                            ? "text-green-500"
+                            : "text-red-500"
+                        }`}
+                      >
+                        {jogador.name === "V" ? "Em dia" : "Atrasado"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
             </Card>
           </div>
         </div>

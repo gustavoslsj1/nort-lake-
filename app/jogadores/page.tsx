@@ -56,7 +56,7 @@ export default function JogadoresPage() {
   if (!jogador) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
-        <p>Anime não encontrado.</p>
+        <p>Jogador não encontrado.</p>
       </div>
     );
   }
