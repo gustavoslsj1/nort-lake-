@@ -15,4 +15,20 @@ export interface Player {
   assistencia: string;
   qi_jogo: string;
   n_faltas: string;
+  Flexibilidade: number;
+  Impulsao: number;
+  VO2Max: number;
+  ForcaSuperior: number;
+  desempenhoTecnico: number;
+  imc: number;
+  lesao?: string;
+  recuperacao?: string;
+  sexo: string;
+  idade: number;
+  peso: number;
+  visceral: number;
+  idadeCorporal: number;
+  basal: number;
+  musculo: number;
+  gc: number;
 }
